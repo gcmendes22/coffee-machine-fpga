@@ -1,0 +1,24 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity Mux2_1 is
+	generic(		U : 	unsigned := "0101";
+					D :	unsigned := "0001"
+		);
+	port(
+			sel					:	in 	std_logic(1 downto 0);
+			dataIn1, dataIn2	:	in 	std_logic_vector(7 downto 0);
+			dataOut				:	out 	std_logic_vector(7 downto 0);
+		);
+
+end entity;
+
+architecture Behavioral of Generic_Counter is
+
+begin
+
+
+
+
+end architecture;

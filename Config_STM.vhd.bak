@@ -1,0 +1,118 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity ControlPath is 
+
+	port(
+		clock : in std_logic; --x
+		clk_2Hz : in std_logic;
+		isOn : in std_logic; --
+		normal_coffe : in std_logic; --
+		double_coffe : in std_logic; --
+		tc_warm : in std_logic; --
+		tc_normal_coffe : in std_logic; --
+		tc_double_coffe : in std_logic; --
+		l_on : out std_logic; --
+		l_cn : out std_logic; --
+		l_cd : out std_logic; --
+		l_res : out std_logic; -- 
+		l_bomb : out std_logic; --
+		en_10 : out std_logic; --
+		en_15 : out std_logic; --
+		en_20 : out std_logic; --
+		max_coffees_per_round : in std_logic;
+		tiragem_to_display: out std_logic_vector(1 downto 0);
+		add_coffee_normal : out std_logic;
+		reset_counters_4_15 : out std_logic;
+		add_coffee_double :out std_logic
+	);
+
+end entity;
+
+architecture Behavioral of ControlPath is 
+--Estado S_Start -> Estado inicial com entrada ON
+--Estado S_Ready -> Estado que é iniciado quando a maquina esta pronta para tirar cafes.
+--Estado S_Config -> Estado para a configuracao da maquina
+--Estado S_Standby -> Estado que é iniciado quando a maquina se auto desliga
+--Estado S_Cn -> Estado para tirar o cafe normal
+--Estado S_Cd -> Estado para tirar o cafe duplo
+--Estado S_Refresh -> Estado que conta os 4 em 4 cafes+
+  
+type TState is (S_Start, s_Ready, S_Cn, S_Cd, S_Off);
+signal pState, nState : TState;
+
+begin 
+
+sync_process : process(clock) -- processo para sincronizar o relogio com os estados
+begin 
+	if(rising_edge(clock)) then 
+		if(isOn = '0') then
+			pState <= S_Off;
+		else 
+			pState <= nState;
+		end if;
+	end if;
+end process;
+
+comb_process : process(pState, isOn, normal_coffe, double_coffe, clk_2Hz) 
+begin
+	case pState is
+	
+		when S_Off =>
+			
+			if(isOn = '1') then 
+				nState <= S_Start;
+			else 
+				nState <= S_Off;
+			end if;
+		
+		when S_Start => 
+			
+			if(tc_warm = '1') then --qu1ando acabar de aquecer
+				nState <= S_Ready;
+			else
+				nState <= S_Start;
+			end if;
+	
+		when S_Ready =>
+			
+			
+			if(normal_coffe = '1') then 
+				nState <= S_Cn;
+			elsif(double_coffe = '1') then 
+				nState <= S_Cd;
+			end if;
+		
+		when S_Cn =>
+		
+			if(tc_normal_coffe = '1') then 
+				add_coffee_normal <= '1';
+				if(max_coffees_per_round = '1') then 
+					nState <= S_Off;
+				elsif(normal_coffe = '1') then
+					nState <= S_Cn;
+				elsif(double_coffe = '1') then 
+					nState <= S_Cd;
+				else 
+					nState <= S_Ready;
+				end if;
+			end if;
+			
+		when S_Cd =>
+		
+			if(tc_double_coffe = '1') then 
+				add_coffee_double <= '1';
+				if(max_coffees_per_round = '1') then 
+					nState <= S_Off;
+				elsif(normal_coffe = '1') then
+					nState <= S_Cn;
+				elsif(double_coffe = '1') then 
+					nState <= S_Cd;
+				else 
+					nState <= S_Ready;
+				end if;
+			end if;	
+			
+		end case;
+end process;
+end architecture;
